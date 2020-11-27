@@ -24,13 +24,15 @@ class CityList(APIView):
 class CityDetail(APIView):
     def get(self, request, city_id):
         city = City.objects.filter(id=city_id).first()
+
+        if not city:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
         streets = Street.objects.filter(city__id=city_id).all()
         streets_list = [
             {'id': street.id, 'name': street.name, 'street_number': street.street_number} for street in streets
         ]
         response = {'city_name': city.name, 'streets_list': streets_list}
-        print(response)
-
         serializer = CityDetailSerializer(data=response)
         if serializer.is_valid():
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -38,12 +40,14 @@ class CityDetail(APIView):
 
     def post(self, request, city_id):
         city = City.objects.filter(id=city_id).first()
+
         if not city:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
         serializer = StreetSerializer(data=request.data)
         if serializer.is_valid():
-            print(city)
-            Street.objects.create(city=city, name=serializer.data.get('name'), street_number=serializer.data.get('street_number'))
+            Street.objects.create(city=city, name=serializer.data.get('name'),
+                                  street_number=serializer.data.get('street_number'))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
@@ -55,22 +59,40 @@ class ApartmentDetail(APIView):
         return street_apartments
 
     def get(self, request, city_id):
+        city = City.objects.filter(id=city_id).first()
+
+        if not city:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
         streets = Street.objects.filter(city__id=city_id)
         apartment_data = []
         for street in streets:
             apartment_list = Apartment.objects.filter(city__id=city_id, street__id=street.id).all()
-            apartment_data.append({'street_name': street.name, 'apartments': [{'id': item.id, 'price': item.price} for item in apartment_list]})
-        print(apartment_data)
+            apt_details = [{'id': item.id, 'price': item.price} for item in apartment_list]
+            apartment_data.append({'street_name': street.name, 'apartments': apt_details})
+
         serializer = ApartmentDetailSerializer(data=apartment_data, many=True)
         if serializer.is_valid():
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, city_id):
+        city = City.objects.filter(id=city_id).first()
+        street = Street.objects.filter(name=request.data['street'], city__id=city_id).first()
+
+        if not street or not city:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
         serializer = ApartmentSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.validated_data['city_id'] = city_id
-            print(serializer.validated_data)
-            serializer.save()
+            Apartment.objects.create(city=city, street=street,
+                                     price=serializer.data.get('price'),
+                                     area=serializer.data.get('area'),
+                                     rooms=serializer.data.get('rooms'),
+                                     floor=serializer.data.get('floor'),
+                                     free=serializer.data.get('free'),
+                                     width=serializer.data.get('width'),
+                                     length=serializer.data.get('length'))
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
