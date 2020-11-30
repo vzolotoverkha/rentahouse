@@ -101,32 +101,12 @@ class ApartmentDetail(APIView):
 class ApartmentFilter(APIView):
     def get(self, request):
         all_apts = Apartment.objects.all()
-        print(f"ALL {all_apts}")
-        price = request.query_params.get('price', None)
-        print(price)
-        width = request.query_params.get('width', None)
-        #
-        # if price:
-        #     filtered = all_apts.filter(price=price)
-        #     print(f"PRICED {filtered}")
-        # if width:
-        #     filtered = all_apts.filter(width=width)
-        #     print(f"WIDTHED {filtered}")
+        price = request.query_params.get('price')
+        width = request.query_params.get('width')
 
-        # if price is not None and width is not None:
-        filtered = all_apts.filter(price__gt=price, width__gt=width)
-        print(f"PRICED AND WIDTHED {filtered}")
-
-
-
-
-
-
-        """
-        example url: http://127.0.0.1:8000/apartment?city=Kiev&street=Kovalivska
-        your url: http://127.0.0.1:8000/apartment?price=2000&width=100
-        вернуть все квартиры в которых price > указанного в url
-        """
-        params = request.query_params  # возращается дикт параметров - которые в урл после знака ? (& - и){'city': ['Kiev'], 'street': ['Kovalivska']}
-        print(params)
-        return Response({}, status=status.HTTP_200_OK)
+        if price is not None and width is not None:
+            filtered = all_apts.filter(price__gt=price, width__gt=width)
+            serializer = ApartmentSerializer(filtered, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
