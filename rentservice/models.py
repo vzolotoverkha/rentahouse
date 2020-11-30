@@ -32,4 +32,4 @@ class Apartment(models.Model):
     added = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.area} sq.m. apartment with {self.rooms} room(s) in {self.city}"
+        return f"{self.area} sq.m. apartment with {self.rooms} room(s) in {self.city} for {self.price} USD {self.width} meters wide"

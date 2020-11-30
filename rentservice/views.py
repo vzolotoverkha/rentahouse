@@ -78,3 +78,17 @@ class ApartmentDetail(APIView):
             Apartment.objects.create(city=city, street=street_obj, **serializer.validated_data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ApartmentFilter(APIView):
+    def get(self, request):
+        all_apts = Apartment.objects.all()
+        price = request.query_params.get('price')
+        width = request.query_params.get('width')
+
+        if price is not None and width is not None:
+            filtered = all_apts.filter(price__gt=price, width__gt=width)
+            serializer = ApartmentSerializer(filtered, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
